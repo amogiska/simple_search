@@ -12,5 +12,5 @@ make
 ./search [num_vectors]
 ```
 
-Requires SIFT dataset files (not included in repo).
+Requires SIFT dataset files: https://huggingface.co/datasets/qbo-odp/sift1m.
 
