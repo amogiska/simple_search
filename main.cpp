@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <queue>
 #include <cstdlib>
+#include <chrono>
 
 using namespace std;
 
@@ -130,7 +131,7 @@ int main(int argc, char* argv[]) {
     }
     
     cout << "\n[Step 1] Loading database vectors..." << endl;
-    cout << "Reading first " << NUM_BASE_VECTORS << " vectors from sift_base.fvecs" << endl;
+    cout << "Reading up to " << NUM_BASE_VECTORS << " vectors from sift_base.fvecs" << endl;
     
     auto database = read_fvecs("sift_base.fvecs", NUM_BASE_VECTORS);
     
@@ -139,7 +140,21 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    cout << " Loaded " << database.size() << " vectors" << endl;
+    int original_size = database.size();
+    cout << " Loaded " << original_size << " vectors from file" << endl;
+    
+    // If requested more vectors than available, duplicate them
+    if (NUM_BASE_VECTORS > original_size) {
+        cout << " Requested " << NUM_BASE_VECTORS << " but only " << original_size << " available" << endl;
+        cout << " Duplicating vectors to reach " << NUM_BASE_VECTORS << "..." << endl;
+        
+        while (database.size() < static_cast<size_t>(NUM_BASE_VECTORS)) {
+            int idx = database.size() % original_size;
+            database.push_back(database[idx]);
+        }
+        cout << " Database now has " << database.size() << " vectors (with duplicates)" << endl;
+    }
+    
     cout << " Each vector has " << database[0].size() << " dimensions" << endl;
     
     cout << "\n[Step 2] Loading query vector..." << endl;
@@ -165,11 +180,17 @@ int main(int argc, char* argv[]) {
     cout << "\n[Step 3] Performing brute force search..." << endl;
     cout << "Finding top " << K << " nearest neighbors" << endl;
     
+    auto start_time = chrono::high_resolution_clock::now();
     auto results = brute_force_search(query, database, K);
+    auto end_time = chrono::high_resolution_clock::now();
+    
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
+    double seconds = duration.count() / 1000.0;
     
     cout << "\n[Step 4] Results!" << endl;
     cout << "========================================" << endl;
     cout << "Top " << K << " Nearest Neighbors:" << endl;
+    cout << "Search Time: " << seconds << " seconds" << endl;
     cout << "========================================" << endl;
     
     for (size_t i = 0; i < results.size(); i++) {
